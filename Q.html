@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>隨機出題機</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #question-box {
+            border: 2px solid black;
+            padding: 20px;
+            width: 50%;
+            margin: 20px auto;
+            font-size: 20px;
+            text-align: left;
+            min-height: 50px;
+        }
+        .container { display: flex; align-items: center; justify-content: center; margin-top: 20px; }
+        .left-controls { margin-right: 10px; }
+        .domain-selection { display: flex; justify-content: center; margin-bottom: 20px; }
+        .domain-list {
+            width: 150px;
+            height: 200px;
+            border: 1px solid black;
+            overflow-y: auto;
+            padding: 10px;
+            text-align: center;
+        }
+        .domain-container { margin: 0 20px; }
+        .domain-item {
+            padding: 5px;
+            cursor: pointer;
+        }
+        .domain-item.selected {
+            background-color: lightblue;
+        }
+    </style>
+</head>
+<body>
+    <h1>隨機測驗</h1>
+    <input type="file" id="fileInput" accept=".xlsx"> <br><br>
+    <div class="domain-selection">
+        <div class="domain-container">
+            <h3>未選領域</h3>
+            <div id="unselectedDomains" class="domain-list"></div>
+        </div>
+        <div class="domain-container">
+            <h3>已選領域</h3>
+            <div id="selectedDomains" class="domain-list"></div>
+        </div>
+    </div>
+    <div class="container">
+        <div class="left-controls">
+            <button onclick="pickQuestion()">隨機出題</button>
+            <button onclick="pauseQuestion()">搶答</button>
+            <button onclick="resumeQuestion()" style="display:none;">繼續題目</button>
+        </div>
+        <input type="text" id="answerInput" placeholder="輸入答案">
+        <button onclick="checkAnswer()">確認</button>
+        <button onclick="showAnswer()">正解</button>
+    </div>
+    <div id="question-box"></div>
+    <p id="result" style="color: green;"></p>
+    <p id="correctAnswer" style="display: none; color: blue;"></p>
+
+    <script>
+        let quizData = [];
+        let currentAnswer = "";
+        let isPaused = false;
+        let uniqueDomains = new Set();
+
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            const reader = new FileReader();
+            reader.readAsBinaryString(file);
+            reader.onload = function(e) {
+                const data = e.target.result;
+                const workbook = XLSX.read(data, { type: 'binary' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                quizData = XLSX.utils.sheet_to_json(sheet);
+                extractDomains();
+            };
+        });
+
+        function extractDomains() {
+            uniqueDomains.clear();
+            quizData.forEach(q => {
+                if (q['領域']) {
+                    uniqueDomains.add(q['領域']);
+                }
+            });
+            renderDomainLists();
+        }
+
+        function renderDomainLists() {
+            const unselectedContainer = document.getElementById("unselectedDomains");
+            const selectedContainer = document.getElementById("selectedDomains");
+            unselectedContainer.innerHTML = "";
+            selectedContainer.innerHTML = "";
+
+            uniqueDomains.forEach(domain => {
+                const item = document.createElement("div");
+                item.textContent = domain;
+                item.classList.add("domain-item");
+                item.onclick = function() { moveItem(this); };
+                // item.ondblclick = function() {  };
+                selectedContainer.appendChild(item);
+            });
+        }
+
+        function toggleSelection(element) {
+            element.classList.toggle("selected");
+        }
+
+        function moveItem(element) {
+            const fromContainer = element.parentElement;
+            const toContainer = fromContainer.id === "unselectedDomains" ? document.getElementById("selectedDomains") : document.getElementById("unselectedDomains");
+            element.classList.remove("selected");
+            toContainer.appendChild(element);
+        }
+
+        function pickQuestion() {
+            if (quizData.length === 0) return;
+            let selectedDomains = Array.from(document.getElementById("selectedDomains").children).map(el => el.textContent);
+            let filteredData = quizData.filter(q => selectedDomains.includes(q['領域']));
+            if (filteredData.length === 0) return;
+            let randomIndex = Math.floor(Math.random() * filteredData.length);
+            let question = filteredData[randomIndex];
+            // document.getElementById("question-box").textContent = question["題目"];
+            // currentAnswer = question["答案"];
+            document.getElementById('question-box').innerText = "";
+            document.getElementById('result').innerText = "";
+            document.getElementById('answerInput').value = "";
+            document.getElementById('correctAnswer').style.display = "none";
+            document.querySelector("button[onclick='pauseQuestion()']").style.display = "inline-block";
+            questionIndex = 0;
+            isPaused = false;
+            questionText = question["題目"];
+            currentAnswer = question["答案"];
+            showQuestionLetterByLetter();
+        }
+
+        function showQuestionLetterByLetter() {
+            if (questionIndex < questionText.length && !isPaused) {
+                document.getElementById('question-box').innerText += questionText[questionIndex];
+                questionIndex++;
+                questionTimeout = setTimeout(showQuestionLetterByLetter, 50);
+            }
+            if(questionIndex === questionText.length)document.querySelector("button[onclick='pauseQuestion()']").style.display = "none";
+        }
+
+        function checkAnswer() {
+            let userAnswer = document.getElementById("answerInput").value.trim();
+            document.getElementById('result').style.color = userAnswer === currentAnswer ? "green" : "red";
+            document.getElementById("result").innerText = userAnswer === currentAnswer ? "正確！" : "錯誤！";
+        }
+
+        function showAnswer() {
+            document.getElementById("correctAnswer").textContent = "正確答案: " + currentAnswer;
+            document.getElementById("correctAnswer").style.display = "block";
+        }
+
+        function pauseQuestion() {
+            isPaused = true;
+            document.querySelector("button[onclick='resumeQuestion()']").style.display = "inline-block";
+        }
+
+        function resumeQuestion() {
+            isPaused = false;
+            document.querySelector("button[onclick='resumeQuestion()']").style.display = "none";
+            showQuestionLetterByLetter();
+        }
+    </script>
+</body>
+</html>
