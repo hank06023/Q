@@ -38,7 +38,7 @@
     </style>
 </head>
 <body>
-    <h1>隨機測驗</h1>
+    <h1>隨機出題機</h1>
     <input type="file" id="fileInput" accept=".xlsx"> <br><br>
     <div class="domain-selection">
         <div class="domain-container">
@@ -48,6 +48,12 @@
         <div class="domain-container">
             <h3>已選領域</h3>
             <div id="selectedDomains" class="domain-list"></div>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" value="" id="voiceModeCheck" onclick="SwitchVoiceMode()">
+            <label class="form-check-label" for="flexCheckDefault">
+                開啟語音
+            </label>
         </div>
     </div>
     <div class="container">
@@ -68,6 +74,8 @@
         let quizData = [];
         let currentAnswer = "";
         let isPaused = false;
+        let isVoiceMode = false;
+        const listen = "請聽題：";
         let uniqueDomains = new Set();
 
         document.getElementById('fileInput').addEventListener('change', function(event) {
@@ -122,6 +130,7 @@
 
         function pickQuestion() {
             if (quizData.length === 0) return;
+            if (window.speechSynthesis.speaking || window.speechSynthesis.paused)stopSpeech();
             let selectedDomains = Array.from(document.getElementById("selectedDomains").children).map(el => el.textContent);
             let filteredData = quizData.filter(q => selectedDomains.includes(q['領域']));
             if (filteredData.length === 0) return;
@@ -135,14 +144,21 @@
             document.getElementById('correctAnswer').style.display = "none";
             document.querySelector("button[onclick='pauseQuestion()']").style.display = "inline-block";
             questionIndex = 0;
+            listenIndex = 0;
             isPaused = false;
             questionText = question["題目"];
             currentAnswer = question["答案"];
+            
             showQuestionLetterByLetter();
+            if(isVoiceMode)readOut();
         }
 
-        function showQuestionLetterByLetter() {
-            if (questionIndex < questionText.length && !isPaused) {
+        function showQuestionLetterByLetter(flag) {
+            if(listenIndex < 4){
+                document.getElementById('question-box').innerText += listen[listenIndex++];
+                questionTimeout = setTimeout(showQuestionLetterByLetter, 50);
+            }
+            else if (!isVoiceMode && questionIndex < questionText.length && !isPaused) {
                 document.getElementById('question-box').innerText += questionText[questionIndex];
                 questionIndex++;
                 questionTimeout = setTimeout(showQuestionLetterByLetter, 50);
@@ -162,14 +178,50 @@
         }
 
         function pauseQuestion() {
+            pauseSpeech();
             isPaused = true;
             document.querySelector("button[onclick='resumeQuestion()']").style.display = "inline-block";
         }
 
         function resumeQuestion() {
+            resumeSpeech();
             isPaused = false;
             document.querySelector("button[onclick='resumeQuestion()']").style.display = "none";
             showQuestionLetterByLetter();
+        }
+        function SwitchVoiceMode(){
+            if(!isVoiceMode){
+                isVoiceMode=true;
+                isPaused = true;
+            }
+            else {
+                isVoiceMode=false;
+                isPaused = true;
+            }
+        }
+        function readOut() {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance("請聽題，"+questionText);
+                utterance.lang = "zh-TW"; 
+                window.speechSynthesis.speak(utterance);
+            }
+            else {
+                alert("您的瀏覽器不支援語音播放功能");
+            }
+        }
+        function pauseSpeech() {
+            if (window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+                window.speechSynthesis.pause();
+            }
+        }
+
+        function resumeSpeech() {
+            if (window.speechSynthesis.paused) {
+                window.speechSynthesis.resume();
+            }
+        }
+        function stopSpeech() {
+            window.speechSynthesis.cancel();
         }
     </script>
 </body>
