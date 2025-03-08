@@ -16,6 +16,9 @@
             text-align: left;
             min-height: 50px;
         }
+        /* #explaining-box {
+            margin: 0 20px;
+        } */
         .container { display: flex; align-items: center; justify-content: center; margin-top: 20px; }
         .left-controls { margin-right: 10px; }
         .domain-selection { display: flex; justify-content: center; margin-bottom: 20px; }
@@ -35,11 +38,28 @@
         .domain-item.selected {
             background-color: lightblue;
         }
+        .instructions {
+            width: 150px;
+            height: 200px;
+            border: 1px solid black;
+            padding: 10px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
     </style>
 </head>
 <body>
     <h1>隨機出題機</h1>
+    
     <input type="file" id="fileInput" accept=".xlsx"> <br><br>
+    <div class="form-check">
+        <input class="form-check-input" type="checkbox" value="" id="voiceModeCheck" onclick="SwitchVoiceMode()">
+        <label class="form-check-label" for="flexCheckDefault">
+            開啟語音
+        </label>
+    </div>
     <div class="domain-selection">
         <div class="domain-container">
             <h3>未選領域</h3>
@@ -49,13 +69,28 @@
             <h3>已選領域</h3>
             <div id="selectedDomains" class="domain-list"></div>
         </div>
-        <div class="form-check">
-            <input class="form-check-input" type="checkbox" value="" id="voiceModeCheck" onclick="SwitchVoiceMode()">
-            <label class="form-check-label" for="flexCheckDefault">
-                開啟語音
-            </label>
+        <div class="domain-container">
+            <h3>使用說明</h3>
+            <div class="instructions">
+                <pre>
+使用說明：
+　※檔案需為xlsx或xls
+　※第一欄須包含領域、
+　　題目、答案三個欄位
+　※出題快捷鍵Ｑ
+　　搶答快捷鍵Ａ
+　　確認快捷鍵enter
+　※語音模式不會顯示
+　　題目的文字
+　※目前答案需要與提
+　　供的解答一模一樣
+　　才算正確
+                </pre>
+            </div>
         </div>
+
     </div>
+    
     <div class="container">
         <div class="left-controls">
             <button onclick="pickQuestion()">隨機出題</button>
@@ -66,6 +101,7 @@
         <button onclick="checkAnswer()">確認</button>
         <button onclick="showAnswer()">正解</button>
     </div>
+    <h3>題目</h3>
     <div id="question-box"></div>
     <p id="result" style="color: green;"></p>
     <p id="correctAnswer" style="display: none; color: blue;"></p>
