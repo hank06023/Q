@@ -116,6 +116,7 @@
         <input type="text" id="answerInput" placeholder="輸入答案">
         <button onclick="checkAnswer()">確認</button>
         <button onclick="showAnswer()">正解</button>
+        <button onclick="showQuestion()">完整題目</button>
     </div>
     <h3>題目</h3>
     <div id="question-box"></div>
@@ -274,6 +275,9 @@
         }
         function stopSpeech() {
             window.speechSynthesis.cancel();
+        }
+        function showQuestion(){
+            document.getElementById('question-box').innerText = listen+questionText;
         }
         document.addEventListener("keyup", function(event) {
             if (event.key === "Enter") {
