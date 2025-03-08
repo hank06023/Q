@@ -156,12 +156,12 @@
         function showQuestionLetterByLetter(flag) {
             if(listenIndex < 4){
                 document.getElementById('question-box').innerText += listen[listenIndex++];
-                questionTimeout = setTimeout(showQuestionLetterByLetter, 50);
+                questionTimeout = setTimeout(showQuestionLetterByLetter, 250);
             }
             else if (!isVoiceMode && questionIndex < questionText.length && !isPaused) {
                 document.getElementById('question-box').innerText += questionText[questionIndex];
                 questionIndex++;
-                questionTimeout = setTimeout(showQuestionLetterByLetter, 50);
+                questionTimeout = setTimeout(showQuestionLetterByLetter, 250);
             }
             if(questionIndex === questionText.length)document.querySelector("button[onclick='pauseQuestion()']").style.display = "none";
         }
@@ -234,6 +234,7 @@
                 pickQuestion();
             }
         });
+        //答案比對
     </script>
 </body>
 </html>
